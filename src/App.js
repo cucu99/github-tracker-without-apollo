@@ -15,11 +15,11 @@ const axiosGitHubGraphQL = axios.create({
 });
 
 const GET_ISSUES_OF_REPOSITORY = `
-  {
-    organization(login: "the-road-to-learn-react") {
+  query ($organization: String!, $repository: String!) {
+    organization(login: $organization) {
       name
       url
-      repository(name: "the-road-to-learn-react") {
+      repository(name: $repository) {
         name
         url
         issues(last: 5) {
@@ -36,13 +36,29 @@ const GET_ISSUES_OF_REPOSITORY = `
   }
 `;
 
+const getIssuesOfRepository = path => {
+  const [organization, repository] = path.split('/');
+
+  return axiosGitHubGraphQL.post('', {
+    query: GET_ISSUES_OF_REPOSITORY,
+    variables: { organization, repository }
+  });
+};
+
+const resolveIssuesQuery = queryResult => ({
+  organization: queryResult.data.data.organization,
+  errors: queryResult.data.data.errors
+});
+
 class App extends Component {
   state = {
-    path: 'the-road-to-learn-react/the-road-to-learn-react'
+    path: 'the-road-to-learn-react/the-road-to-learn-react',
+    organization: null,
+    repository: null
   };
 
   componentDidMount() {
-    this.onFetchFormGithub();
+    this.onFetchFormGithub(this.state.path);
   }
 
   onChange = event => {
@@ -50,19 +66,14 @@ class App extends Component {
   };
 
   onSubmit = event => {
-    // fetch data
+    this.onFetchFormGithub(this.state.path);
 
-    event.prevetDefault();
+    event.preventDefault();
   };
 
-  onFetchFormGithub = async () => {
-    const result = await axiosGitHubGraphQL.post('', {
-      query: GET_ISSUES_OF_REPOSITORY
-    });
-    this.setState(() => ({
-      organization: result.data.data.organization,
-      errors: result.data.errors
-    }));
+  onFetchFormGithub = async path => {
+    const queryResult = await getIssuesOfRepository(path);
+    this.setState(resolveIssuesQuery(queryResult));
   };
 
   render() {
