@@ -2,7 +2,7 @@ import React from 'react';
 
 import RepositoryIssues from './RepositoryIssues';
 
-export default ({ repository }) => {
+export default ({ repository, onFetchMoreIssues }) => {
   return (
     <div>
       <p>
@@ -10,7 +10,10 @@ export default ({ repository }) => {
         <a href={repository.url}>{repository.name} </a>
       </p>
 
-      <RepositoryIssues repository={repository} />
+      <RepositoryIssues
+        repository={repository}
+        onFetchMoreIssues={onFetchMoreIssues}
+      />
     </div>
   );
 };

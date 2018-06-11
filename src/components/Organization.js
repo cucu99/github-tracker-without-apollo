@@ -2,12 +2,11 @@ import React from 'react';
 
 import Repository from './Repository';
 
-export default ({ organization, errors }) => {
-  if (errors) {
+export default ({ organization, onFetchMoreIssues }) => {
+  if (organization.repository === null) {
     return (
       <p>
-        <strong>Something went wrong:</strong>
-        {errors.map(error => errors.message).join(' ')}
+        <strong>Something went wrong:</strong> Couldn't find the repository :(
       </p>
     );
   }
@@ -18,7 +17,10 @@ export default ({ organization, errors }) => {
         <strong>Issues from Organization:</strong>
         <a href={organization.url}>{organization.name}</a>
       </p>
-      <Repository repository={organization.repository} />
+      <Repository
+        repository={organization.repository}
+        onFetchMoreIssues={onFetchMoreIssues}
+      />
     </div>
   );
 };
