@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import Organization from './components/Organization';
+
+const TITLE = 'React GraphQL GitHub Client';
+
 const axiosGitHubGraphQL = axios.create({
   baseURL: 'https://api.github.com/graphql',
   headers: {
@@ -10,7 +14,27 @@ const axiosGitHubGraphQL = axios.create({
   }
 });
 
-const TITLE = 'React GraphQL GitHub Client';
+const GET_ISSUES_OF_REPOSITORY = `
+  {
+    organization(login: "the-road-to-learn-react") {
+      name
+      url
+      repository(name: "the-road-to-learn-react") {
+        name
+        url
+        issues(last: 5) {
+          edges {
+            node {
+              id
+              title
+              url
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 class App extends Component {
   state = {
@@ -18,7 +42,7 @@ class App extends Component {
   };
 
   componentDidMount() {
-    // fetch data
+    this.onFetchFormGithub();
   }
 
   onChange = event => {
@@ -31,15 +55,25 @@ class App extends Component {
     event.prevetDefault();
   };
 
+  onFetchFormGithub = async () => {
+    const result = await axiosGitHubGraphQL.post('', {
+      query: GET_ISSUES_OF_REPOSITORY
+    });
+    this.setState(() => ({
+      organization: result.data.data.organization,
+      errors: result.data.errors
+    }));
+  };
+
   render() {
-    const { path } = this.state;
+    const { path, organization, errors } = this.state;
 
     return (
       <div>
         <h1>{TITLE}</h1>
 
         <form onSubmit={this.onSubmit}>
-          <label htmlFor="url">Show open issues for https://guthub.com/</label>
+          <label htmlFor="url">Show open issues for https://github.com/</label>
 
           <input
             id="url"
@@ -54,7 +88,11 @@ class App extends Component {
 
         <hr />
 
-        {/*Here comes the result*/}
+        {organization ? (
+          <Organization organization={organization} errors={errors} />
+        ) : (
+          <p>No information yet ...</p>
+        )}
       </div>
     );
   }
