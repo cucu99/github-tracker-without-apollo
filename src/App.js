@@ -20,8 +20,13 @@ const GET_ISSUES_OF_REPOSITORY = `
       name
       url
       repository(name: $repository) {
+        id
         name
         url
+        stargazers {
+          totalCount
+        }
+        viewerHasStarred
         issues(first: 5, after: $cursor, states: [OPEN]) {
           edges {
             node {
@@ -44,6 +49,26 @@ const GET_ISSUES_OF_REPOSITORY = `
             hasNextPage
           }
         }
+      }
+    }
+  }
+`;
+
+const ADD_STAR = `
+  mutation ($repositoryId: ID!) {
+    addStar(input:{starrableId:$repositoryId}) {
+      starrable {
+        viewerHasStarred
+      }
+    }
+  }
+`;
+
+const REMOVE_STAR = `
+  mutation ($repositoryId: ID!) {
+    removeStar(input:{starrableId:$repositoryId}) {
+      starrable {
+        viewerHasStarred
       }
     }
   }
@@ -87,6 +112,58 @@ const resolveIssuesQuery = (queryResult, cursor) => state => {
   };
 };
 
+const addStarToRepository = repositoryId => {
+  return axiosGitHubGraphQL.post('', {
+    query: ADD_STAR,
+    variables: { repositoryId }
+  });
+};
+
+const removeStarFromRepository = repositoryId => {
+  return axiosGitHubGraphQL.post('', {
+    query: REMOVE_STAR,
+    variables: { repositoryId }
+  });
+};
+
+const resolveAddStarMutation = mutationResult => state => {
+  const { viewerHasStarred } = mutationResult.data.data.addStar.starrable;
+  const { totalCount } = state.organization.repository.stargazers;
+
+  return {
+    ...state,
+    organization: {
+      ...state.organization,
+      repository: {
+        ...state.organization.repository,
+        viewerHasStarred,
+        stargazers: {
+          totalCount: totalCount + 1
+        }
+      }
+    }
+  };
+};
+
+const resolveRemoveStarMutation = mutationResult => state => {
+  const { viewerHasStarred } = mutationResult.data.data.removeStar.starrable;
+  const { totalCount } = state.organization.repository.stargazers;
+
+  return {
+    ...state,
+    organization: {
+      ...state.organization,
+      repository: {
+        ...state.organization.repository,
+        viewerHasStarred,
+        stargazers: {
+          totalCount: totalCount - 1
+        }
+      }
+    }
+  };
+};
+
 class App extends Component {
   state = {
     path: 'the-road-to-learn-react/the-road-to-learn-react',
@@ -117,6 +194,16 @@ class App extends Component {
     const { endCursor } = this.state.organization.repository.issues.pageInfo;
 
     this.onFetchFormGithub(this.state.path, endCursor);
+  };
+
+  onStarRepository = async (repositoryId, viewerHasStarred) => {
+    if (viewerHasStarred) {
+      const mutationResult = await removeStarFromRepository(repositoryId);
+      this.setState(resolveRemoveStarMutation(mutationResult));
+    } else {
+      const mutationResult = await addStarToRepository(repositoryId);
+      this.setState(resolveAddStarMutation(mutationResult));
+    }
   };
 
   render() {
@@ -154,6 +241,7 @@ class App extends Component {
           <Organization
             organization={organization}
             onFetchMoreIssues={this.onFetchMoreIssues}
+            onStarRepository={this.onStarRepository}
           />
         ) : (
           <p>No information yet ...</p>

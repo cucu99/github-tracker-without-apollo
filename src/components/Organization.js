@@ -2,7 +2,7 @@ import React from 'react';
 
 import Repository from './Repository';
 
-export default ({ organization, onFetchMoreIssues }) => {
+export default ({ organization, onFetchMoreIssues, onStarRepository }) => {
   if (organization.repository === null) {
     return (
       <p>
@@ -20,6 +20,7 @@ export default ({ organization, onFetchMoreIssues }) => {
       <Repository
         repository={organization.repository}
         onFetchMoreIssues={onFetchMoreIssues}
+        onStarRepository={onStarRepository}
       />
     </div>
   );
