@@ -166,7 +166,7 @@ const resolveRemoveStarMutation = mutationResult => state => {
 
 class App extends Component {
   state = {
-    path: 'the-road-to-learn-react/the-road-to-learn-react',
+    path: 'facebook/create-react-app',
     organization: null,
     errors: null
   };
